@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8">
+		<meta http-equiv="X-UA-Compatible" content="IE=edge">
+			<meta name="viewport" content="width=device-width, initial-scale=1">
+		<script type="text/javascript" src="jquery.js" language="javascript1.1"></script>
+		<title>SIPJS TEST</title>
+	</head>
+	<body class="index-page">
+		<div class="page-body page-body-index"><div class="container">
+		<p>SIPJS TEST</p>
+		<input type="button" class="button call" value="позвонить с сайта" onclick="mysip.call()">
+		<input type="button" class="button hang hidden" value="повесить трубку" onclick="mysip.hang()">
+		<!--input type="button" value="call2" onclick="call2()"-->
+
+		<video id="remoteVideo" width="1" height="1"></video>
+		<video id="localVideo" width="1" height="1" muted="muted"></video>
+		<h3>Консоль ошибок</h3>
+		<pre class="error" style="border: 1px solid #ff0000;">
+		</pre>
+<style>
+input.button { background-color: #9747FF;
+    max-width: 300px;
+    margin: 10px auto;
+    border-radius: 5px;
+    text-align: center;
+    padding: 10px;
+    color: #ffffff;
+    cursor: pointer;
+    text-decoration: none;
+    border: 0px; }
+input.button.inprogress {
+	background-color: #d0d0d0;
+}
+.hidden { display:none;}
+</style>
+<script>
+
+var mysip={};
+mysip.call=async function()
+{
+	try {
+		$("input.button.call").addClass("inprogress");
+		console.log("mysip.call()");
+		const server = "wss://webrtc.verytel.ru:8089/ws";
+		const aor = "sip:1000@195.209.51.232";
+		const options = {
+				aor,
+				delegate: {
+					onCallHangup: function() { mysip.onhangup(); },
+					onServerDisconnect: function() { mysip.onhangup(); },
+				},
+				userAgentOptions: {
+					authorizationUsername: "1000",
+					authorizationPassword: ")–WGMvW2)g5)7QF"
+				},
+				media: {
+					local: {
+						video: (document.getElementById('localVideo') )
+					},
+					remote: {
+						video: (document.getElementById('remoteVideo') )
+					}
+				}
+			};
+		console.log("mysip.call(): new SimpleUser()");
+		var su=mysip._su=new SIP.Web.SimpleUser(server, options);
+		console.log("mysip.call(): su.connect()");
+		await su.connect();
+		console.log("mysip.call(): su.register()");
+		await su.register();
+		console.log("mysip.call(): su.call()");
+		await su.call('sip:6000@195.209.51.232');
+		$("input.button.hang").removeClass("hidden");
+		//await su.call('sip:6000@195.209.51.232');
+		//await su.hangup();
+	} catch(e) {
+		$("pre.error").text(e.toString());
+		$("input.button.call").removeClass("inprogress");
+	}
+	//$("input.button.call").removeClass("inprogress");
+}
+mysip.hang=async function() {
+	$("input.button.call").removeClass("inprogress");
+	$("input.button.hang").addClass("hidden");
+	try {
+		await mysip._su.hangup();
+	} catch(e) {
+	}
+	mysip._su=undefined;
+}
+mysip.onhangup=async function() {
+	this.hang();
+}
+
+</script>
+
+	</body>
+	<script src="sip.js"></script>
+</html>
+ 
